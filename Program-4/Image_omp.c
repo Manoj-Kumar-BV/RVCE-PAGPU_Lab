@@ -91,7 +91,16 @@ double process_image(char *iname, char *oname, int num_threads, const char *sche
     omp_set_num_threads(num_threads);
 
     // Apply parallel processing with different scheduling strategies
-    if (strcmp(schedule_type, "static") == 0)
+    if (strcmp(schedule_type, "default") == 0)
+    {
+        // Default OpenMP scheduling (no explicit schedule clause)
+#pragma omp parallel for
+        for (x = 0; x < w; x++)
+        {
+            process_pixels(img, x, h);
+        }
+    }
+    else if (strcmp(schedule_type, "static") == 0)
     {
 #pragma omp parallel for schedule(static, chunk_size)
         for (x = 0; x < w; x++)
@@ -142,16 +151,16 @@ int main()
 {
     // Image sizes to test
     const int sizes[] = {512, 1024, 2048, 4096};
-    // OpenMP scheduling policies to test
-    const char *schedules[] = {"static", "dynamic", "guided"};
-    // Chunk sizes to test
+    // OpenMP scheduling policies to test (including default)
+    const char *schedules[] = {"default", "static", "dynamic", "guided"};
+    // Chunk sizes to test for each schedule
     const int chunk_sizes[] = {1, 10, 50, 100};
     // Number of OpenMP threads to use
     const int num_threads = 4;
 
-    printf("\nPerformance Results (Time in seconds)\n");
-    printf("=====================================\n");
-    printf("Size\tSchedule\tChunk\tTime\n");
+    printf("\n+-------------+----------------+----------------+----------------+----------------+\n");
+    printf("| Image Size  |    Default     |     Static     |    Dynamic     |     Guided     |\n");
+    printf("+-------------+----------------+----------------+----------------+----------------+\n");
 
     char input_file[256], output_file[256];
 
@@ -159,21 +168,25 @@ int main()
     for (int i = 0; i < sizeof(sizes) / sizeof(sizes[0]); i++)
     {
         sprintf(input_file, "input_%dx%d.png", sizes[i], sizes[i]);
+        
+        printf("| %4dx%-4d    ", sizes[i], sizes[i]);
 
-        // Iterate over different scheduling strategies
+        // Test each scheduling policy with varying chunk sizes
         for (int j = 0; j < sizeof(schedules) / sizeof(schedules[0]); j++)
         {
-            // Iterate over different chunk sizes
-            for (int k = 0; k < sizeof(chunk_sizes) / sizeof(chunk_sizes[0]); k++)
-            {
-                sprintf(output_file, "output/output_%dx%d_%s_%d.png", sizes[i], sizes[i], schedules[j], chunk_sizes[k]);
-
-                double time = process_image(input_file, output_file, num_threads, schedules[j], chunk_sizes[k]);
-
-                printf("%dx%d\t%s\t	%d\t%.6f\n", sizes[i], sizes[i], schedules[j], chunk_sizes[k], time);
-            }
+            // Use chunk size 10 as a reasonable default for comparison
+            int chunk = 10;
+            
+            sprintf(output_file, "output/output_%dx%d_%s.png", sizes[i], sizes[i], schedules[j]);
+            
+            double time = process_image(input_file, output_file, num_threads, schedules[j], chunk);
+            
+            printf("| %10.6f s   ", time);
         }
+        printf("|\n");
     }
+
+    printf("+-------------+----------------+----------------+----------------+----------------+\n");
 
     return 0;
 }

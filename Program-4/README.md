@@ -25,3 +25,18 @@ gcc -fopenmp Image_omp.c -o program4 -lgd
 
 ---
 
+## Program Objectives
+
+**a) Demonstrate the performance of different scheduling techniques for varying chunk values**
+- Compare Default, Static, Dynamic, and Guided scheduling policies
+- Use chunk size of 10 for fair comparison across all scheduling types
+
+**b) Analyze the scheduling patterns by assigning a single color value for each thread**
+- Thread 0: Red tint
+- Thread 1: Green tint  
+- Thread 2: Blue tint
+- Other threads: Pure grayscale
+- Visual inspection of output images shows which thread processed which columns
+
+---
+
